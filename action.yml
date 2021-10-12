@@ -1,5 +1,5 @@
-name: 'Azure key vault - Get Secrets'
-description: 'Get Secrets from Azure Key Vault instance and set as output variables. github.com/azure/actions'
+name: 'Azure backup'
+description: 'Azure Backup adhoc backup on dpp and recoveryservices vaults. github.com/azure/actions'
 inputs:
   resourceGroupName:
     description: Name of the resource group.
@@ -15,7 +15,7 @@ inputs:
     required: false
   
 branding:
-  icon: 'akv.svg'
+  icon: 'copy'
   color: 'blue'
 runs:
   using: 'node12'
