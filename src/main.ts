@@ -27,6 +27,7 @@ async function run() {
         }
 
         if (handler != null) {
+            core.info("logged into azure")
             var backupType = core.getInput('action').toLowerCase();
             var backupVaultActionParameters = new VaultActionParameters().getBackupActionParameters(handler); 
             var vaultHelper = VaultHelperFactory.getVaultHelper(handler, timeOut , backupVaultActionParameters);

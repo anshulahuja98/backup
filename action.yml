@@ -13,6 +13,10 @@ inputs:
   selectedbackupinstances:
     description: 'List of backup instances specifically selected'
     required: false
+  action:
+    description: 'options: vaultlevelbackup'
+    required: true
+  
   
 branding:
   icon: 'copy'
