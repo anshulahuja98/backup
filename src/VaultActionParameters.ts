@@ -14,8 +14,7 @@ export class VaultActionParameters {
         this.resourceGroupName = core.getInput('resourcegroupname');
         this.backupVault = core.getInput("backupvault");
         this.recoveryServicesVault = core.getInput("recoveryservicesvault");
-        this.selectedBackupInstances = core.getInput("selectedbackupinstances");
-
+        this.selectedBackupInstances = core.getInput("selectedbackupinstances");        
         if (!this.resourceGroupName) {
             core.info("Resource group not provided");
         }
