@@ -47,3 +47,4 @@ async function run() {
         core.exportVariable('AZURE_HTTP_USER_AGENT', prefix);
     }
 }
+run();
