@@ -10,6 +10,7 @@ import { VaultActionParameters } from './VaultActionParameters';
 var azPath: string;
 var prefix = !!process.env.AZURE_HTTP_USER_AGENT ? `${process.env.AZURE_HTTP_USER_AGENT}` : "";
 async function run() {
+    core.info("Starting backup vault action");
     try {
         let usrAgentRepo = crypto.createHash('sha256').update(`${process.env.GITHUB_REPOSITORY}`).digest('hex');
         let actionName = 'GetKeyVaultSecrets';
