@@ -1,0 +1,22 @@
+name: 'Azure key vault - Get Secrets'
+description: 'Get Secrets from Azure Key Vault instance and set as output variables. github.com/azure/actions'
+inputs:
+  resourceGroupName:
+    description: Name of the resource group.
+    required: true    
+  backupvault:
+    description: 'List of backup vaults'
+    required: false
+  secrets:
+    description: 'List of recoveryservicesvault'
+    required: false
+  selectedBackupInstances:
+    description: 'List of backup instances specifically selected'
+    required: false
+  
+branding:
+  icon: 'akv.svg'
+  color: 'blue'
+runs:
+  using: 'node12'
+  main: 'lib/main.js'
