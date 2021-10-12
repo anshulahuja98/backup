@@ -1,16 +1,16 @@
 name: 'Azure backup'
 description: 'Azure Backup adhoc backup on dpp and recoveryservices vaults. github.com/azure/actions'
 inputs:
-  resourceGroupName:
+  resourcegroupname:
     description: Name of the resource group.
     required: true    
   backupvault:
     description: 'List of backup vaults'
     required: false
-  secrets:
+  recoveryservicesvault:
     description: 'List of recoveryservicesvault'
     required: false
-  selectedBackupInstances:
+  selectedbackupinstances:
     description: 'List of backup instances specifically selected'
     required: false
   
