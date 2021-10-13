@@ -30,14 +30,32 @@ async function run() {
         if (handler != null) {
             core.info("logged into azure")
             var backupType = core.getInput('action').toLowerCase();
-            var backupVaultActionParameters = new VaultActionParameters().getBackupActionParameters(handler); 
+            var backupVaultActionParameters = new VaultActionParameters().getBackupActionParameters(handler);             
+            
+            // TODO remove
+            backupType = "vaultlevelbackup";
+            backupVaultActionParameters.backupVault = "anshulaksvault"
+            backupVaultActionParameters.resourceGroupName = "anshulaksvault"
+
             var vaultHelper = VaultHelperFactory.getVaultHelper(handler, timeOut , backupVaultActionParameters);
 
-            if (backupType === "vaultlevelbackup"){
+            // if (backupType === "vaultlevelbackup"){
                 vaultHelper.initVaultHelper();
-                vaultHelper.listBackupInstances();
+                var backupInstanceListObject = await vaultHelper.listBackupInstances();
+                var backupInstancesNameList = [];
+                for(var instance in backupInstanceListObject){
+                    if(backupInstanceListObject[instance]["properties"]["currentProtectionState"].toLowerCase() === "protectionconfigured"){
+                        backupInstancesNameList.push(backupInstanceListObject[instance]["name"]);
+                        core.info(backupInstanceListObject[instance]["name"] + " is a properly configured backup instance");
+                    }
+                    else{
+                        core.warning(backupInstanceListObject[instance]["name"] + " CurrentProtectionState:" +  backupInstanceListObject[instance]["properties"]["currentProtectionState"] + " is a not a properly configured backup instance, skipping it");
+                    }
+
+                }
+                vaultHelper.adhocBackup(backupInstancesNameList);
                 // vaultHelper.adhocBackup();
-            }                        
+            // }                        
         }        
     } catch (error) {
         core.debug("Get secret failed with error: " + error);

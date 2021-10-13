@@ -1,16 +1,29 @@
 import * as core from '@actions/core';
 import { IAuthorizer } from 'azure-actions-webclient/Authorizer/IAuthorizer';
-import { BackupVaultClient } from "./BackupVaultClient";
+import { BackupVaultClient, VaultClientBase } from "./BackupVaultClient";
 
 import util = require("util");
 import { VaultActionParameters } from './VaultActionParameters';
+import { Console } from 'console';
+import { resolve } from 'dns';
+
+
+
+function isNullOrWhiteSpace(input: string) {
+    return (typeof input === 'undefined' || input == null)
+    || input.replace(/\s/g, '').length < 1;
+}
 
 
 export class VaultHelperFactory{
+    public static  isNullOrWhitespace( input ) {
+       
+      }
+
     public static getVaultHelper(handler: IAuthorizer, timeOut: number, actionParams: VaultActionParameters): VaultHelper {
-        if (!actionParams.recoveryServicesVault) {
+        if (!isNullOrWhiteSpace(actionParams.recoveryServicesVault)) {
             return new RecoveryServicesVaultHelper(handler, timeOut, actionParams );
-        } else if (!actionParams.backupVault) {
+        } else if (!isNullOrWhiteSpace(actionParams.backupVault)) {
             return new BackupVaultHelper(handler, timeOut, actionParams);
         }
         else{
@@ -20,17 +33,17 @@ export class VaultHelperFactory{
 }
 
 interface VaultHelper{
-    adhocBackup(): Promise<void>
-    listBackupInstances(): Promise<void>
+    adhocBackup(backupInstanceNameList: string[]): Promise<void>
+    listBackupInstances(): Promise<object>
     initVaultHelper(): Promise<void>
 }
 
 class VaultHelperBase implements VaultHelper{ 
     
-    public backupVaultActionParameters: VaultActionParameters;
+    protected backupVaultActionParameters: VaultActionParameters;
     // private keyVaultClient: KeyVaultClient;
-    private timeOut: number;
-    private handler: IAuthorizer;
+    protected timeOut: number;
+    protected handler: IAuthorizer;
 
     constructor(handler: IAuthorizer, timeOut: number, backupVaultActionParameters: VaultActionParameters) {
         this.backupVaultActionParameters = backupVaultActionParameters;
@@ -40,10 +53,10 @@ class VaultHelperBase implements VaultHelper{
     initVaultHelper(): Promise<void> {
         return;
     }
-    adhocBackup(): Promise<void> {
+    adhocBackup(backupInstanceNameList: string[]): Promise<void> {
         return;
     }
-    listBackupInstances(): Promise<void> {
+    async listBackupInstances(): Promise<object> {
         return;
     }
     
@@ -64,16 +77,35 @@ export class BackupVaultHelper extends VaultHelperBase{
     private vaultClient: BackupVaultClient;
 
     async initVaultHelper() : Promise<void>{
+        this.vaultClient = new BackupVaultClient(this.handler, this.timeOut);
         await this.vaultClient.init();
 
     }
-    adhocBackup(): Promise<void> {
-        throw new Error('Method not implemented.');
+    adhocBackup(backupInstanceNameList: string[]): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.vaultClient.adhocBackup(this.backupVaultActionParameters.subscriptionId, this.backupVaultActionParameters.resourceGroupName, this.backupVaultActionParameters.backupVault, backupInstanceNameList, (error, result) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(result);
+                }
+            });
+        });       
     }
-    listBackupInstances(): Promise<void> {
-        throw new Error('Method not implemented.');
+    async listBackupInstances(): Promise<object> {
+        return new Promise((resolve, reject) => {           
+            this.vaultClient.listBackupInstances(this.backupVaultActionParameters.subscriptionId, this.backupVaultActionParameters.resourceGroupName, this.backupVaultActionParameters.backupVault, (error, result) => {
+                if (error) {
+                    reject(error);
+                }
+                else {
+                    resolve(result);
+                }
+            });
+        });
+     
     }
-
 }
 
 export class RecoveryServicesVaultHelper extends VaultHelperBase{
@@ -82,11 +114,12 @@ export class RecoveryServicesVaultHelper extends VaultHelperBase{
     async initVaultHelper(): Promise<void>{
         await this.vaultHelper.init();
     }
-    adhocBackup(): Promise<void> {
+    adhocBackup(backupInstanceNameList: string[]): Promise<void> {
         throw new Error('Method not implemented.');
     }
-    listBackupInstances(): Promise<void> {
+    listBackupInstances(): Promise<object> {
         throw new Error('Method not implemented.');
     }
 
 }
+
