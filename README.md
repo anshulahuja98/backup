@@ -1,4 +1,4 @@
-# GitHub Action to fetch secrets from Azure Key Vault
+# GitHub Action to Trigger Adhoc backup on Azure resources
 
 With the Get Key Vault Secrets action, you can fetch secrets from an [Azure Key Vault](https://docs.microsoft.com/en-us/rest/api/keyvault/about-keys--secrets-and-certificates) instance and consume in your GitHub Action workflows.
 
@@ -16,29 +16,31 @@ Refer to more [Actions for Azure](https://github.com/Azure/actions) and [Starter
 
 * Authenticate using [Azure Login](https://github.com/Azure/login) with an Azure service principal, which also has Get, List permissions on the keyvault under consideration.
   
-### Sample workflow to build and deploy a Node.js Web app to Azure using publish profile
+### Sample workflow which leverages the Azure backup to periodically do a vault level backup Every Monday at 1PM UTC (9AM EST)
 
 ```yaml
-
 # File: .github/workflows/workflow.yml
 
-on: [push]
+on:
+  schedule:     
+    # Every Monday at 1PM UTC (9AM EST)
+    - cron: '0 13 * * 1'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      # checkout the repo
-    - uses: actions/checkout@master
-    - uses: Azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} 
-    - uses: Azure/get-keyvault-secrets@v1
-      with:
-        keyvault: "my
-        Vault"
-        secrets: 'mySecret'  # comma separated list of secret keys that need to be fetched from the Key Vault 
-      id: myGetSecretAction
+  trigger-backup:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: Trigger Vault backup on Azure
+          uses: anshulahuja98/backup@main
+          with:
+            resourcegroupname: myResourceGroup
+            backupvault: myVault
+            action: vaultlevelbackup
         
 ```
 
@@ -65,45 +67,85 @@ az ad sp create-for-rbac --name "myApp" --role contributor \
 ```
 Add the json output as [a secret](https://aka.ms/create-secrets-for-GitHub-workflows) (let's say with the name `AZURE_CREDENTIALS`) in the GitHub repository. 
 
-### Enable permissions to access the Key Vault secrets
-Provide explicit access policies on the above Azure service principal to be able to access your Key Vault for `get` and `list` operations. Use below command for that:
-```
-az keyvault set-policy -n $KV_NAME --secret-permissions get list --spn <clientId from the Azure SPN JSON>
-```
-For more details, refer to [KeyVault Set-Policy](https://docs.microsoft.com/en-us/cli/azure/keyvault?view=azure-cli-latest#az-keyvault-set-policy).
 
-### Consuming secrets fetched using the keyvault action in your workflow
-Sample workflow which leverages the Key Vault action to fetch multiple secrets from the Key Vault and use them as credentials for the docker login action.  
+
+## E2E scenario build -> test -> backup -> deploy
 
 ```yaml
-on: [push]
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+name: Project build, test, backup, deploy
 
 jobs:
   build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run build command
+        run: echo Hello, world!
+
+      - name: Build project 
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+  run-tests:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run unit tests
+        run: echo Hello, world!
+
+      - name: Run E2E tests
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+  trigger-backup:
+    needs: run-tests
     runs-on: ubuntu-latest
     steps:
-      # checkout the repo
-    - uses: actions/checkout@master
-    - uses: Azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }} # Define secret variable in repository settings as per action documentation
-    - uses: Azure/get-keyvault-secrets@v1
-      with:
-        keyvault: "myKeyVault"
-        secrets: 'mySecret1, mySecret2'
-      id: myGetSecretAction
-    - uses: Azure/docker-login@v1
-      with:
-        login-server: mycontainer.azurecr.io
-        username: ${{ steps.myGetSecretAction.outputs.mySecret1 }}
-        password: ${{ steps.myGetSecretAction.outputs.mySecret2 }}
-    - run: |
-        cd go-sample
-        docker build . -t my.azurecr.io/myimage:${{ github.sha }}
-        docker push my.azurecr.io/myimage:${{ github.sha }}
-        cd ..
- 
- ```
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Trigger Vault backup on Azure
+        uses: anshulahuja98/backup@main
+        with:
+          resourcegroupname: anshulaksvault
+          backupvault: anshulaksvault
+          action: vaultlevelbackup
+  
+  deploy-to-azure:
+    needs: trigger-backup
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Deploy Web app
+        run: echo Hello, world!
+
+      - name: Apply schema changes
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          
+```
 
 # Contributing
 
